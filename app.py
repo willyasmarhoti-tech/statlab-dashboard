@@ -220,14 +220,92 @@ st.dataframe(work.drop(columns=["_Kategori"], errors="ignore"), use_container_wi
 csv_out = work.drop(columns=["_Kategori"], errors="ignore").to_csv(index=False).encode("utf-8")
 st.download_button("⬇️ Unduh data yang digunakan (CSV)", data=csv_out, file_name="data_dashboard.csv", mime="text/csv")
 
-st.subheader("Kesimpulan otomatis")
+
+st.divider()
+st.subheader("Analisis Variasi Antar Kelompok")
+
+# Cari kelompok dengan variasi terkecil dan terbesar
+most_consistent = grouped.loc[grouped["Standar deviasi"].idxmin()]
+most_variable = grouped.loc[grouped["Standar deviasi"].idxmax()]
 highest = grouped.loc[grouped["Rata-rata"].idxmax()]
 lowest = grouped.loc[grouped["Rata-rata"].idxmin()]
-most_variable = grouped.loc[grouped["Standar deviasi"].idxmax()]
-if len(grouped) > 1:
-    st.write(f"- Rata-rata keseluruhan kolom **{value_col}** adalah **{mean:.2f}**, dengan median **{median:.2f}**.")
-    st.write(f"- Kelompok dengan rata-rata tertinggi adalah **{highest[cat]}** ({highest['Rata-rata']:.2f}); terendah **{lowest[cat]}** ({lowest['Rata-rata']:.2f}).")
-    st.write(f"- Kelompok dengan variasi nilai terbesar adalah **{most_variable[cat]}** (standar deviasi {most_variable['Standar deviasi']:.2f}).")
-else:
-    st.write(f"- Rata-rata data adalah **{mean:.2f}** dan standar deviasi **{std:.2f}**.")
-st.markdown('<p class="note">Catatan: slider posisi dan skala hanya mengubah tampilan visual grafik, bukan nilai asli dalam dataset.</p>', unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        "Paling konsisten",
+        str(most_consistent[cat]),
+        f"SD: {most_consistent['Standar deviasi']:.2f}"
+    )
+
+with col2:
+    st.metric(
+        "Paling bervariasi",
+        str(most_variable[cat]),
+        f"SD: {most_variable['Standar deviasi']:.2f}"
+    )
+
+with col3:
+    st.metric(
+        "Rata-rata tertinggi",
+        str(highest[cat]),
+        f"{highest['Rata-rata']:.2f}"
+    )
+
+st.subheader("Grafik Standar Deviasi")
+
+fig_sd = px.bar(
+    grouped,
+    x=cat,
+    y="Standar deviasi",
+    color="Standar deviasi",
+    color_continuous_scale="blues",
+    text="Standar deviasi",
+    labels={
+        cat: "Kelompok",
+        "Standar deviasi": "Standar deviasi"
+    }
+)
+
+fig_sd.update_traces(texttemplate="%{text:.2f}", textposition="outside")
+fig_sd.update_layout(
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(color="#e5e7eb"),
+    height=420,
+    coloraxis_showscale=False
+)
+
+st.plotly_chart(fig_sd, use_container_width=True)
+
+st.subheader("Kesimpulan Otomatis")
+
+st.write(
+    f"Rata-rata keseluruhan nilai adalah **{mean:.2f}**, "
+    f"dengan median **{median:.2f}** dan standar deviasi keseluruhan "
+    f"**{std:.2f}**."
+)
+
+st.write(
+    f"Kelompok dengan rata-rata tertinggi adalah **{highest[cat]}** "
+    f"({highest['Rata-rata']:.2f}), sedangkan rata-rata terendah "
+    f"adalah **{lowest[cat]}** ({lowest['Rata-rata']:.2f})."
+)
+
+st.write(
+    f"Kelompok paling konsisten adalah **{most_consistent[cat]}**, "
+    f"dengan standar deviasi **{most_consistent['Standar deviasi']:.2f}**."
+)
+
+st.write(
+    f"Kelompok dengan variasi nilai terbesar adalah **{most_variable[cat]}**, "
+    f"dengan standar deviasi **{most_variable['Standar deviasi']:.2f}**."
+)
+
+st.caption(
+    "Interpretasi: standar deviasi yang kecil menunjukkan nilai lebih "
+    "berdekatan dengan rata-rata kelompok. Standar deviasi yang besar "
+    "menunjukkan penyebaran nilai yang lebih lebar."
+)
