@@ -42,7 +42,20 @@ with st.sidebar:
     st.caption("CSV sebaiknya memiliki kolom kategori/kelompok dan satu kolom angka.")
     st.divider()
     st.subheader("Tampilan grafik")
-    chart_type = st.selectbox("Jenis grafik", ["Batang", "Garis", "Area", "Lingkaran"])
+   
+chart_type = st.selectbox(
+    "Jenis grafik",
+    [
+        "Batang",
+        "Garis",
+        "Area",
+        "Lingkaran",
+        "Box Plot",
+        "Histogram",
+        "Heatmap"
+    ]
+)
+
     position = st.slider("Posisi vertikal grafik", min_value=-30, max_value=30, value=0, step=1,
                          help="Menggeser tampilan grafik secara visual; tidak mengubah nilai data asli.")
     scale_pct = st.slider("Skala vertikal (%)", min_value=50, max_value=200, value=100, step=10,
@@ -176,28 +189,93 @@ if y_min == y_max:
 left, right = st.columns([1.65, 1])
 with left:
     st.subheader("Visualisasi interaktif")
+   
     if chart_type == "Batang":
-        fig = px.bar(grouped, x=cat, y="Tampilan", hover_data=["Rata-rata", "Jumlah", "Standar deviasi"],
-                     labels={"Tampilan": f"Rata-rata {value_col} (tampilan)", cat: "Kelompok"},
-                     color="Rata-rata", color_continuous_scale="blues")
+        fig = px.bar(
+            grouped, x=cat, y="Tampilan",
+            hover_data=["Rata-rata", "Jumlah", "Standar deviasi"],
+            labels={"Tampilan": f"Rata-rata {value_col} (tampilan)", cat: "Kelompok"},
+            color="Rata-rata", color_continuous_scale="blues"
+        )
         fig.update_yaxes(range=[y_min, y_max])
+
     elif chart_type == "Garis":
-        fig = px.line(grouped, x=cat, y="Tampilan", markers=True,
-                      hover_data=["Rata-rata", "Jumlah", "Standar deviasi"],
-                      labels={"Tampilan": f"Rata-rata {value_col} (tampilan)", cat: "Kelompok"})
+        fig = px.line(
+            grouped, x=cat, y="Tampilan", markers=True,
+            hover_data=["Rata-rata", "Jumlah", "Standar deviasi"],
+            labels={"Tampilan": f"Rata-rata {value_col} (tampilan)", cat: "Kelompok"}
+        )
         fig.update_yaxes(range=[y_min, y_max])
+
     elif chart_type == "Area":
-        fig = px.area(grouped, x=cat, y="Tampilan", markers=True,
-                      hover_data=["Rata-rata", "Jumlah", "Standar deviasi"],
-                      labels={"Tampilan": f"Rata-rata {value_col} (tampilan)", cat: "Kelompok"})
+        fig = px.area(
+            grouped, x=cat, y="Tampilan", markers=True,
+            hover_data=["Rata-rata", "Jumlah", "Standar deviasi"],
+            labels={"Tampilan": f"Rata-rata {value_col} (tampilan)", cat: "Kelompok"}
+        )
         fig.update_yaxes(range=[y_min, y_max])
-    else:
+
+    elif chart_type == "Lingkaran":
         pie_df = grouped.copy()
         pie_df["Bagian"] = pie_df["Rata-rata"].clip(lower=0)
         if pie_df["Bagian"].sum() <= 0:
             pie_df["Bagian"] = pie_df["Jumlah"]
-        fig = px.pie(pie_df, names=cat, values="Bagian", hole=0.45,
-                     hover_data=["Rata-rata", "Jumlah"], title="Proporsi rata-rata tiap kelompok")
+
+        fig = px.pie(
+            pie_df, names=cat, values="Bagian", hole=0.45,
+            hover_data=["Rata-rata", "Jumlah"],
+            title="Proporsi rata-rata tiap kelompok"
+        )
+
+    elif chart_type == "Box Plot":
+        fig = px.box(
+            work, x=cat, y=value_col, points="all",
+            color=cat,
+            labels={cat: "Kelompok", value_col: "Nilai"},
+            title="Sebaran Nilai Setiap Kelompok"
+        )
+
+    elif chart_type == "Histogram":
+        fig = px.histogram(
+            work, x=value_col, color=cat,
+            barmode="overlay", opacity=0.75,
+            labels={value_col: "Nilai"},
+            title="Distribusi Nilai"
+        )
+
+    elif chart_type == "Heatmap":
+        heat_df = grouped.set_index(cat)[
+            ["Rata-rata", "Standar deviasi", "Jumlah"]
+        ].copy()
+
+        # Normalisasi setiap kolom agar skala berbeda
+        # tidak mendominasi warna heatmap.
+        heat_norm = heat_df.copy()
+        for col in heat_norm.columns:
+            min_val = heat_norm[col].min()
+            max_val = heat_norm[col].max()
+            if max_val != min_val:
+                heat_norm[col] = (
+                    (heat_norm[col] - min_val) / (max_val - min_val)
+                )
+            else:
+                heat_norm[col] = 0.5
+
+        fig = px.imshow(
+            heat_norm.T,
+            x=heat_norm.index.astype(str),
+            y=heat_norm.columns,
+            color_continuous_scale="Blues",
+            aspect="auto",
+            labels={
+                "x": "Kelompok",
+                "y": "Statistik",
+                "color": "Skor relatif"
+            },
+            title="Heatmap Perbandingan Statistik"
+        )
+        fig.update_xaxes(side="bottom")
+
     fig.update_layout(
         template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=10, r=10, t=45, b=10), height=420,
