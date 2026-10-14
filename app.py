@@ -81,8 +81,23 @@ if not numeric_cols:
 with st.sidebar:
     value_col = st.selectbox("Kolom nilai angka", numeric_cols, index=0)
     other_cols = [c for c in df.columns if c != value_col]
-    category_options = ["(nomor baris)"] + other_cols
-    category_col = st.selectbox("Kolom kelompok/kategori", category_options, index=0)
+    
+# Pilih kolom kelompok secara otomatis jika tersedia
+category_options = ["(nomor baris)"] + other_cols
+
+default_category = "(nomor baris)"
+for col in other_cols:
+    nama = str(col).strip().lower()
+    if nama in ["kelompok", "kategori", "group", "grup"]:
+        default_category = col
+        break
+
+default_index = category_options.index(default_category)
+category_col = st.selectbox(
+    "Kolom kelompok/kategori",
+    category_options,
+    index=default_index
+)
 
 work = df.copy()
 work[value_col] = pd.to_numeric(work[value_col], errors="coerce")
