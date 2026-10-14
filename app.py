@@ -37,32 +37,42 @@ def sample_data():
     return pd.DataFrame(rows)
 
 with st.sidebar:
-    st.header("⚙️ Pengaturan")
-    uploaded = st.file_uploader("Unggah data CSV (opsional)", type=["csv"])
-    st.caption("CSV sebaiknya memiliki kolom kategori/kelompok dan satu kolom angka.")
     st.divider()
     st.subheader("Tampilan grafik")
-   
-chart_type = st.selectbox(
-    "Jenis grafik",
-    [
-        "Batang",
-        "Garis",
-        "Area",
-        "Lingkaran",
-        "Box Plot",
-        "Histogram",
-        "Heatmap"
-    ]
-)
 
-    position = st.slider("Posisi vertikal grafik", min_value=-30, max_value=30, value=0, step=1,
-                         help="Menggeser tampilan grafik secara visual; tidak mengubah nilai data asli.")
-    scale_pct = st.slider("Skala vertikal (%)", min_value=50, max_value=200, value=100, step=10,
-                          help="Mengatur rentang sumbu Y untuk melihat perbedaan data lebih jelas.")
+    chart_type = st.selectbox(
+        "Jenis grafik",
+        [
+            "Batang",
+            "Garis",
+            "Area",
+            "Lingkaran",
+            "Box Plot",
+            "Histogram",
+            "Heatmap"
+        ]
+    )
+
+    position = st.slider(
+        "Posisi vertikal grafik",
+        min_value=-30,
+        max_value=30,
+        value=0,
+        step=1,
+        help="Menggeser tampilan grafik secara visual; tidak mengubah nilai data asli."
+    )
+
+    scale_pct = st.slider(
+        "Skala vertikal (%)",
+        min_value=50,
+        max_value=200,
+        value=100,
+        step=10,
+        help="Mengatur rentang sumbu Y untuk melihat perbedaan data lebih jelas."
+    )
+
     st.divider()
     st.caption("StatLab • Dashboard pembelajaran")
-
 if uploaded is not None:
     try:
         df = pd.read_csv(uploaded, sep=None, engine="python")
