@@ -132,10 +132,36 @@ m5.metric("Rentang nilai", f"{maximum-minimum:.2f}")
 st.divider()
 
 # Group aggregation for charts
-grouped = work.groupby(cat, dropna=False)[value_col].agg(["mean", "sum", "count", "std"]).reset_index()
+
+grouped = work.groupby(cat, dropna=False)[value_col].agg(
+    ["mean", "sum", "count", "std"]
+).reset_index()
+
 grouped["std"] = grouped["std"].fillna(0)
-grouped = grouped.rename(columns={"mean": "Rata-rata", "sum": "Total", "count": "Jumlah", "std": "Standar deviasi"})
+grouped = grouped.rename(columns={
+    "mean": "Rata-rata",
+    "sum": "Total",
+    "count": "Jumlah",
+    "std": "Standar deviasi"
+})
+
+# Urutkan Kelompok 1, Kelompok 2, ..., Kelompok 10
+import re
+
+def urutan_kelompok(nilai):
+    teks = str(nilai)
+    angka = re.search(r"\d+", teks)
+    if angka:
+        return (0, int(angka.group()))
+    return (1, teks.lower())
+
+grouped["_urutan"] = grouped[cat].map(urutan_kelompok)
+grouped = grouped.sort_values("_urutan", kind="stable").drop(
+    columns="_urutan"
+).reset_index(drop=True)
+
 grouped["Tampilan"] = grouped["Rata-rata"] + position
+
 
 # slider scale around current visible data range
 visible_min = float(grouped["Tampilan"].min())
